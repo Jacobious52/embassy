@@ -169,7 +169,7 @@ impl<'d, T: Instance> I2c<'d, T, Async> {
         }
 
         if len >= 2 {
-            self.read_blocking_internal(&mut buffer[len - 1..], false, false)?;
+            self.read_blocking_internal(&mut buffer[len - 1..], false, true)?;
         }
 
         Ok(())
