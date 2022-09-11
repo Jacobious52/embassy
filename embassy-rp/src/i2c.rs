@@ -65,12 +65,12 @@ impl<'d, T: Instance> I2c<'d, T, Async> {
         _peri: impl Peripheral<P = T> + 'd,
         scl: impl Peripheral<P = impl SclPin<T>> + 'd,
         sda: impl Peripheral<P = impl SdaPin<T>> + 'd,
-        irq: impl Peripheral<P = T::Interrupt> + 'd,
+        // irq: impl Peripheral<P = T::Interrupt> + 'd,
         tx_dma: impl Peripheral<P = impl Channel> + 'd,
         rx_dma: impl Peripheral<P = impl Channel> + 'd,
         config: Config,
     ) -> Self {
-        into_ref!(scl, sda, irq, tx_dma, rx_dma);
+        into_ref!(scl, sda, tx_dma, rx_dma);
 
         // Enable interrupts
         unsafe {
@@ -79,9 +79,9 @@ impl<'d, T: Instance> I2c<'d, T, Async> {
             });
         }
 
-        irq.set_handler(Self::on_interrupt);
-        irq.unpend();
-        irq.enable();
+        // irq.set_handler(Self::on_interrupt);
+        // irq.unpend();
+        // irq.enable();
 
         Self::new_inner(
             _peri,
@@ -94,14 +94,14 @@ impl<'d, T: Instance> I2c<'d, T, Async> {
     }
 
     unsafe fn on_interrupt(_: *mut ()) {
-        let status = T::regs().ic_intr_stat().read();
+        // let status = T::regs().ic_intr_stat().read();
 
-        // FIXME:
-        if status.tcr() || status.tc() {
-            let state = T::state();
-            state.chunks_transferred.fetch_add(1, Ordering::Relaxed);
-            state.waker.wake();
-        }
+        // // FIXME:
+        // if status.tcr() || status.tc() {
+        //     let state = T::state();
+        //     state.chunks_transferred.fetch_add(1, Ordering::Relaxed);
+        //     state.waker.wake();
+        // }
         // The flag can only be cleared by writting to nbytes, we won't do that here, so disable
         // the interrupt
         // critical_section::with(|_| {
@@ -620,7 +620,7 @@ mod sealed {
     use embassy_cortex_m::interrupt::Interrupt;
     use embassy_sync::waitqueue::AtomicWaker;
 
-    pub(crate) struct State {
+    pub struct State {
         pub(crate) waker: AtomicWaker,
         pub(crate) chunks_transferred: AtomicUsize,
     }
